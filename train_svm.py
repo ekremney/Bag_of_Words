@@ -2,7 +2,7 @@ from train import *
 from bootstrap import *
 from libsvm.svmutil import svm_train, svm_save_model
 
-hists, labels = train(selected_indexes)
+hists, labels = train()
 
 svm = svm_train(labels, hists, '-s 0 -t 0 -c 1')
 
