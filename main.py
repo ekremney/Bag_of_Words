@@ -14,12 +14,18 @@ if args.mode == 'train':
 	
 	svm = svm_train(labels, hists, '-s 0 -t 0 -c 1')
 
-	model_name = 'svm_' + str(datetime.datetime.now()) + '.dat'
+	model_name = 'svm_trained_' + str(datetime.datetime.now()).replace(' ', '_') + '.dat'
 	svm_save_model(model_name, svm)
 
 
 if args.mode == 'bootstrap':
-	pass
+	hists, labels = train()
+	hists, labels = bootstrap(hists, labels, svm)
+	
+	svm = svm_train(labels, hists, '-s 0 -t 0 -c 1')
+
+	model_name = 'svm_bootstrapped_' + str(datetime.datetime.now()).replace(' ', '_') + '.dat'
+	svm_save_model(model_name, svm)
 
 if args.mode == 'search':
 	pass
