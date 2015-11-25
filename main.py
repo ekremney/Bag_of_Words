@@ -1,14 +1,26 @@
 from train import *
 from tools import *
-from sw_search import *
-import cv2
+from libsvm.svmutil import svm_train, svm_save_model
+from ml_ops import initialize_sw, train, bootstrap
+import argparse, sys, datetime
 
-for i in range (0,10):
-	img = img_read(folder, i)
-	img, detections = initialize(img)
-	cv2.imwrite(str(i) + '.png', img)
+modes = ['train', 'bootstrap', 'search']
+parser = argparse.ArgumentParser()
+parser.add_argument("-m", "--mode", help="specify the mode [-m train|bootstrap|search]", required=True, choices=modes)
+args = parser.parse_args()
+
+if args.mode == 'train':
+	hists, labels = train()
+	
+	svm = svm_train(labels, hists, '-s 0 -t 0 -c 1')
+
+	model_name = 'svm_' + str(datetime.datetime.now()) + '.dat'
+	svm_save_model(model_name, svm)
 
 
+if args.mode == 'bootstrap':
+	pass
 
-
+if args.mode == 'search':
+	pass
 

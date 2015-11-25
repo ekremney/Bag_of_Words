@@ -32,8 +32,3 @@ s_windows = eval(cfg.get('svm', 's_windows'))
 svm = svm_load_model(cfg.get('svm', 'path'))
 
 mode = cfg.get('configs', 'mode')
-
-
-
-print bootstrap_indexes
-
