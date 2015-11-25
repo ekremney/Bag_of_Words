@@ -1,7 +1,7 @@
 from train import *
 from tools import *
 from libsvm.svmutil import svm_train, svm_save_model
-from ml_ops import initialize_sw, train, bootstrap
+from ml_ops import search, train, bootstrap
 import argparse, sys, datetime
 
 modes = ['train', 'bootstrap', 'search']
@@ -20,7 +20,7 @@ if args.mode == 'train':
 
 if args.mode == 'bootstrap':
 	hists, labels = train()
-	hists, labels = bootstrap(hists, labels, svm)
+	hists, labels = bootstrap(hists, labels)
 	
 	svm = svm_train(labels, hists, '-s 0 -t 0 -c 1')
 
@@ -28,5 +28,5 @@ if args.mode == 'bootstrap':
 	svm_save_model(model_name, svm)
 
 if args.mode == 'search':
-	pass
+	search()
 

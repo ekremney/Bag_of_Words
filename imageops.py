@@ -2,6 +2,7 @@ import cv2, csv
 import numpy as np
 from tools import *
 from random import sample, randint
+from libsvm.svmutil import svm_predict
 
 def img_read(folder, index):
 	filename = folder + "/img{:0>5d}.png".format(index)
@@ -166,38 +167,6 @@ def calculate_visual_word(des):
 		hist[i] =+ 1
 	return hist
 
-def sliding_window_search(img, sbox_height, sbox_width, threshold):
-	detections = []
-	height, width = img.shape
-
-	for i in range(1, (height - sbox_height), slide):
-		for j in range(1, (width - sbox_width), slide):
-			img_patch = img[i:i+sbox_height-1, j:j+sbox_width-1]
-			img_feat = extract(img_patch)
-			img_feat = calculate_visual_words(img_feat)
-			y = [0]
-			x = [img_feat]
-			#plabel, acc, pr = svm_predict(y, x, svm)
-			if pr[0][0] > threshold:
-				detections.append([i, i+sbox_height-1, j, j+sbox_width-1, pr[0][0]])
-	return detections
-
-def sw_search(img):
-	detections = []
-
-	cfg = Config()
-	s_windows = cfg.get_sliding_windows()
-	marginX, marginY = cfg.get_margins()
-	height, width = img.shape
-	
-	for i in s_windows:
-		d = sliding_window_search(img, i[0], i[1], i[2])
-		d = add_bbox_margin(d, -marginY, -marginX, height, width)
-		[detections.append(j) for j in d]
-
-	detections = non_max_suppression(detections, cfg.get_non_max_thresh())
-
-	return detections
 
 def extract(img, filtered=None, edged=None):
 	if filtered:
@@ -209,4 +178,60 @@ def extract(img, filtered=None, edged=None):
 	return des
 
 
+def sliding_window_search(img, sbox_height, sbox_width, threshold):
+	detections = []
+	height, width = img.shape
 
+	for i in range(1, (height - sbox_height), slide):
+		for j in range(1, (width - sbox_width), slide):
+			img_patch = img[i:i+sbox_height-1, j:j+sbox_width-1]
+			img_feat = extract(img_patch)
+			vw_hist = calculate_visual_word(img_feat)
+
+			plabel, acc, pr = svm_predict([0], [vw_hist], svm)
+			#time.sleep(10000)
+			
+			if pr[0][0] > threshold:
+				detections.append([i, i+sbox_height-1, j, j+sbox_width-1, pr[0][0]])
+	return detections
+
+
+def initialize_sw(img):
+	detections = []
+
+	height, width = img.shape	
+	
+	for i in s_windows:
+		d = sliding_window_search(img, i[0], i[1], i[2])
+		d = add_bbox_margin(d, height, width, sign = -1)
+		[detections.append(j) for j in d]
+
+	return detections
+
+def compute_detection_AP(detections, bboxes, th=0.4):
+	# sort detections
+	npos = len(bboxes)
+	tp = [0] * len(detections)
+	bb_used = [0] * len(bboxes)
+	
+	for i in range(len(detections)):
+		k = overlaps(detections[i], bboxes, th)
+		if k != -1 and bb_used[k]==0: # TODO: update
+			tp[i] = 1
+			bb_used[k] = 1;
+			#del bboxes[k]
+	pr = [0] * npos
+	rc = [0] * npos
+	j = 0
+	detected_num = sum(tp)
+	for i in range(len(tp)):
+		if tp[i] == 1:
+			pr[j] = float(sum(tp[:i+1]))/(i+1)
+			rc[j] = float(j+1)/float(npos)
+			j += 1
+	[pr.append(0) for i in range(npos-detected_num)]
+	[rc.append(rc[j-1]) for i in range(npos-detected_num)]
+	
+	ap = np.mean(pr)
+	
+	return ap, pr, rc
