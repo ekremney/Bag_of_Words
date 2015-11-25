@@ -1,3 +1,9 @@
+# dataset/output files
+*.png
+*.dat
+.DS_Store
+*.annot
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
